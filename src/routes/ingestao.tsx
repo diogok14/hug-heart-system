@@ -331,7 +331,11 @@ function CardContratacoes() {
             valor={comprador}
             aoMudar={setComprador}
             uf={ufSelecionada}
+            dataInicial={dataInicial}
+            dataFinal={dataFinal}
+            codigoModalidade={Number(modalidade)}
           />
+
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lim" className="text-xs">
