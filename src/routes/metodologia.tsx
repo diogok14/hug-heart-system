@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Bot, MapPinned, ScrollText } from "lucide-react";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import { BadgeProveniencia } from "@/components/radar/BadgeProveniencia";
+import { PageHeader } from "@/components/radar/PageHeader";
 import { FATORES, RISK_META, type RiskLevel } from "@/data/radar";
 
 export const Route = createFileRoute("/metodologia")({
@@ -40,14 +41,12 @@ const GATILHOS: Record<string, string> = {
 function Metodologia() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Metodologia do score preditivo</h1>
-        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          O Score Geral de Risco (0 a 100) resulta da soma ponderada de cinco dimensões analíticas,
-          calculadas por heurísticas determinísticas sobre dados abertos e por análise semântica
-          dos editais.
-        </p>
-      </div>
+      <PageHeader
+        modulo="Nota técnica"
+        titulo="Metodologia do score preditivo"
+        descricao="O Score Geral de Risco (0 a 100) resulta da soma ponderada de cinco dimensões analíticas, calculadas por heurísticas determinísticas sobre dados abertos e por análise semântica dos editais."
+        meta="Documento metodológico · indícios de risco não constituem juízo de mérito sobre a regularidade do certame"
+      />
 
       <section className="panel divide-y">
         {FATORES.map((f) => (

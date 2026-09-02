@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import { DossieLicitacao } from "@/components/radar/DossieLicitacao";
+import { PageHeader } from "@/components/radar/PageHeader";
 import {
   formatBRL,
   formatDate,
@@ -106,15 +107,14 @@ function Explorador() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Explorador de certames</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Base consolidada de licitações e contratos (Transferegov / Portal da Transparência)
-          cruzada com CNPJ/QSA da Receita Federal e sanções da CGU.
-        </p>
-      </div>
+      <PageHeader
+        modulo="Processos licitatórios"
+        titulo="Explorador de certames"
+        descricao="Base consolidada de licitações e contratos (Transferegov / Portal da Transparência) cruzada com CNPJ/QSA da Receita Federal e sanções da CGU."
+        meta={`${licitacoes.length} processos em base · ${linhas.length} atendem aos filtros aplicados`}
+      />
 
-      <div className="panel flex flex-wrap items-center gap-3 p-4">
+      <div className="panel flex flex-wrap items-center gap-3 p-3.5">
         <div className="relative min-w-[240px] flex-1">
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -166,7 +166,14 @@ function Explorador() {
         </Select>
       </div>
 
-      <div className="panel overflow-x-auto">
+      <div className="panel">
+        <div className="panel-header">
+          <h2 className="panel-title">Relação de processos</h2>
+          <span className="label-caps">
+            {linhas.length} de {licitacoes.length} processos
+          </span>
+        </div>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -192,7 +199,7 @@ function Explorador() {
                   <TableCell>
                     <RiskBadge level={r.nivel} score={r.score} />
                   </TableCell>
-                  <TableCell className="max-w-[320px]">
+                  <TableCell className="max-w-[300px] min-w-[240px]">
                     <p className="truncate font-medium">{r.licitacao.objeto}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {r.licitacao.orgao_comprador}
@@ -228,12 +235,11 @@ function Explorador() {
             )}
           </TableBody>
         </Table>
+        </div>
+        <p className="border-t px-5 py-3 text-xs text-muted-foreground">
+          Clique em uma linha para abrir o dossiê analítico completo do certame.
+        </p>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        {linhas.length} de {licitacoes.length} certames exibidos. Clique em uma linha para abrir o
-        dossiê analítico.
-      </p>
 
       <DossieLicitacao
         licitacao={selecionada}

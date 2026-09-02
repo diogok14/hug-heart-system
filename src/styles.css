@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Radar de Integridade — design system institucional (estilo CGU/TCU).
- * Paleta: Slate (estrutura), Indigo (ação), Emerald/Amber/Orange/Rose (risco).
- * Todas as cores em oklch e expostas como tokens semânticos.
+ * Radar de Integridade — design system institucional (estilo Tribunal de Contas).
+ * Paleta: azul-marinho institucional (#0f1b3d / #1e3a5f / #3b6fa0 / #e8edf3).
+ * Títulos em Libre Baskerville, corpo em IBM Plex Sans, números em IBM Plex Mono.
  */
 
 @theme inline {
@@ -51,48 +51,54 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-institutional-muted: var(--institutional-muted);
+  --color-institutional-accent: var(--institutional-accent);
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", ui-serif, Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --shadow-panel: 0 1px 2px oklch(0.2 0.03 265 / 0.06), 0 8px 24px oklch(0.2 0.03 265 / 0.06);
+  --shadow-panel: 0 1px 2px oklch(0.22 0.05 262 / 0.07), 0 1px 0 oklch(0.22 0.05 262 / 0.04);
+  --shadow-raised: 0 8px 28px -12px oklch(0.22 0.05 262 / 0.28);
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.976 0.004 265);
-  --foreground: oklch(0.24 0.032 265);
-  --surface: oklch(0.955 0.006 265);
+  --radius: 0.3rem;
+  --background: oklch(0.972 0.005 252);
+  --foreground: oklch(0.24 0.045 262);
+  --surface: oklch(0.945 0.009 252);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.032 265);
+  --card-foreground: oklch(0.24 0.045 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.032 265);
-  --primary: oklch(0.47 0.17 273);
-  --primary-foreground: oklch(0.985 0.005 265);
-  --secondary: oklch(0.94 0.008 265);
-  --secondary-foreground: oklch(0.3 0.03 265);
-  --muted: oklch(0.945 0.007 265);
-  --muted-foreground: oklch(0.52 0.026 265);
-  --accent: oklch(0.93 0.03 273);
-  --accent-foreground: oklch(0.35 0.12 273);
-  --destructive: oklch(0.55 0.2 20);
-  --destructive-foreground: oklch(0.985 0.005 265);
-  --border: oklch(0.9 0.01 265);
-  --input: oklch(0.9 0.01 265);
-  --ring: oklch(0.47 0.17 273);
-  --institutional: oklch(0.26 0.045 268);
-  --institutional-foreground: oklch(0.97 0.005 265);
-  --risk-low: oklch(0.55 0.13 162);
-  --risk-low-soft: oklch(0.95 0.04 162);
-  --risk-medium: oklch(0.62 0.14 82);
+  --popover-foreground: oklch(0.24 0.045 262);
+  --primary: oklch(0.35 0.068 254);
+  --primary-foreground: oklch(0.98 0.006 252);
+  --secondary: oklch(0.935 0.012 252);
+  --secondary-foreground: oklch(0.31 0.055 258);
+  --muted: oklch(0.94 0.01 252);
+  --muted-foreground: oklch(0.51 0.028 258);
+  --accent: oklch(0.925 0.022 250);
+  --accent-foreground: oklch(0.33 0.065 254);
+  --destructive: oklch(0.52 0.2 22);
+  --destructive-foreground: oklch(0.98 0.006 252);
+  --border: oklch(0.885 0.014 252);
+  --input: oklch(0.885 0.014 252);
+  --ring: oklch(0.53 0.09 250);
+  --institutional: oklch(0.235 0.062 264);
+  --institutional-foreground: oklch(0.965 0.008 252);
+  --institutional-muted: oklch(0.33 0.062 256);
+  --institutional-accent: oklch(0.62 0.11 248);
+  --risk-low: oklch(0.52 0.11 168);
+  --risk-low-soft: oklch(0.95 0.035 168);
+  --risk-medium: oklch(0.61 0.13 84);
   --risk-medium-soft: oklch(0.96 0.05 92);
-  --risk-high: oklch(0.6 0.17 45);
+  --risk-high: oklch(0.58 0.16 46);
   --risk-high-soft: oklch(0.95 0.05 60);
-  --risk-critical: oklch(0.53 0.2 18);
-  --risk-critical-soft: oklch(0.95 0.03 18);
-  --chart-1: oklch(0.47 0.17 273);
-  --chart-2: oklch(0.55 0.13 162);
-  --chart-3: oklch(0.62 0.14 82);
-  --chart-4: oklch(0.6 0.17 45);
-  --chart-5: oklch(0.53 0.2 18);
+  --risk-critical: oklch(0.51 0.19 20);
+  --risk-critical-soft: oklch(0.95 0.03 20);
+  --chart-1: oklch(0.35 0.068 254);
+  --chart-2: oklch(0.53 0.09 250);
+  --chart-3: oklch(0.52 0.11 168);
+  --chart-4: oklch(0.61 0.13 84);
+  --chart-5: oklch(0.51 0.19 20);
 }
 
 @layer base {
@@ -110,7 +116,8 @@
   h1,
   h2,
   h3 {
-    letter-spacing: -0.015em;
+    font-family: var(--font-serif);
+    letter-spacing: -0.005em;
   }
 }
 
@@ -132,4 +139,54 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
   font-family: var(--font-mono);
+}
+
+@utility panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  padding: 0.75rem 1.25rem;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+@utility panel-title {
+  font-family: var(--font-serif);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+@utility rule-top {
+  border-top: 3px solid var(--color-institutional-accent);
+}
+
+@utility nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-left: 3px solid transparent;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  color: color-mix(in oklab, var(--color-institutional-foreground) 72%, transparent);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+
+  &:hover {
+    background-color: color-mix(in oklab, var(--color-institutional-foreground) 8%, transparent);
+    color: var(--color-institutional-foreground);
+  }
+}
+
+@utility nav-item-active {
+  border-left-color: var(--color-institutional-accent);
+  background-color: color-mix(in oklab, var(--color-institutional-foreground) 12%, transparent);
+  color: var(--color-institutional-foreground);
+  font-weight: 600;
 }
