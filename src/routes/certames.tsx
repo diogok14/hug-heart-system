@@ -166,7 +166,14 @@ function Explorador() {
         </Select>
       </div>
 
-      <div className="panel overflow-x-auto">
+      <div className="panel">
+        <div className="panel-header">
+          <h2 className="panel-title">Relação de processos</h2>
+          <span className="label-caps">
+            {linhas.length} de {licitacoes.length} processos
+          </span>
+        </div>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -192,7 +199,7 @@ function Explorador() {
                   <TableCell>
                     <RiskBadge level={r.nivel} score={r.score} />
                   </TableCell>
-                  <TableCell className="max-w-[320px]">
+                  <TableCell className="max-w-[300px] min-w-[240px]">
                     <p className="truncate font-medium">{r.licitacao.objeto}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {r.licitacao.orgao_comprador}
@@ -228,12 +235,11 @@ function Explorador() {
             )}
           </TableBody>
         </Table>
+        </div>
+        <p className="border-t px-5 py-3 text-xs text-muted-foreground">
+          Clique em uma linha para abrir o dossiê analítico completo do certame.
+        </p>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        {linhas.length} de {licitacoes.length} certames exibidos. Clique em uma linha para abrir o
-        dossiê analítico.
-      </p>
 
       <DossieLicitacao
         licitacao={selecionada}
