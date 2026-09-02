@@ -154,48 +154,68 @@ function AutocompleteComprador({
   valor,
   aoMudar,
   uf,
+  dataInicial,
+  dataFinal,
+  codigoModalidade,
 }: {
   valor: string;
   aoMudar: (v: string) => void;
   uf: string;
+  dataInicial: string;
+  dataFinal: string;
+  codigoModalidade: number;
 }) {
-  const [sugestoes, setSugestoes] = useState<string[]>([]);
+  const [lista, setLista] = useState<string[]>([]);
+  const [carregando, setCarregando] = useState(false);
   const [aberto, setAberto] = useState(false);
 
+  // Carrega os órgãos realmente publicados na fonte para os filtros atuais.
   useEffect(() => {
-    const termo = valor.trim();
-    if (termo.length < 2) {
-      setSugestoes([]);
-      return;
-    }
     let ativo = true;
+    setCarregando(true);
     const t = setTimeout(async () => {
       try {
         const r = await sugerirCompradores({
-          data: { termo, ...(uf.length === 2 ? { uf } : {}) },
+          data: {
+            termo: "",
+            dataInicial,
+            dataFinal,
+            codigoModalidade,
+            ...(uf.length === 2 ? { uf } : {}),
+          },
         });
-        if (ativo) setSugestoes(r.sugestoes);
+        if (ativo) setLista(r.sugestoes);
       } catch {
-        if (ativo) setSugestoes([]);
+        if (ativo) setLista([]);
+      } finally {
+        if (ativo) setCarregando(false);
       }
-    }, 250);
+    }, 300);
     return () => {
       ativo = false;
       clearTimeout(t);
     };
-  }, [valor, uf]);
+  }, [uf, dataInicial, dataFinal, codigoModalidade]);
 
-  const visiveis = aberto && sugestoes.length > 0 && !sugestoes.includes(valor.trim());
+  const termo = valor.trim().toLowerCase();
+  const filtradas = lista
+    .filter((s) => (termo ? s.toLowerCase().includes(termo) : true))
+    .slice(0, 30);
+  const visiveis = aberto && filtradas.length > 0;
 
   return (
     <div className="relative space-y-1.5">
       <Label htmlFor="comprador" className="text-xs">
-        Órgão comprador (opcional)
+        Órgão comprador <span className="text-risk-high">*</span>
       </Label>
       <Input
         id="comprador"
         autoComplete="off"
-        placeholder="Comece a digitar, ex.: Prefeitura Municipal…"
+        placeholder={
+          carregando
+            ? "Carregando órgãos do período…"
+            : "Selecione ou digite para filtrar o órgão comprador"
+        }
         value={valor}
         onFocus={() => setAberto(true)}
         onBlur={() => setTimeout(() => setAberto(false), 150)}
@@ -206,7 +226,7 @@ function AutocompleteComprador({
       />
       {visiveis ? (
         <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-md">
-          {sugestoes.map((s) => (
+          {filtradas.map((s) => (
             <li key={s}>
               <button
                 type="button"
@@ -224,12 +244,14 @@ function AutocompleteComprador({
         </ul>
       ) : null}
       <p className="text-[11px] text-muted-foreground">
-        Sugestões vêm dos órgãos já presentes no acervo; o texto digitado também filtra a
-        carga na fonte.
+        {carregando
+          ? "Consultando os órgãos publicados no período e na modalidade selecionados…"
+          : `${lista.length} órgãos disponíveis para os filtros atuais. A seleção é obrigatória antes de executar a ingestão.`}
       </p>
     </div>
   );
 }
+
 
 function CardContratacoes() {
   const [dataInicial, setDataInicial] = useState(iso(ontem));
