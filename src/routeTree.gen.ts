@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CertamesRouteImport } from './routes/certames'
+import { Route as MetodologiaRouteImport } from './routes/metodologia'
+import { Route as VinculosRouteImport } from './routes/vinculos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CertamesRoute = CertamesRouteImport.update({
+  id: '/certames',
+  path: '/certames',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetodologiaRoute = MetodologiaRouteImport.update({
+  id: '/metodologia',
+  path: '/metodologia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VinculosRoute = VinculosRouteImport.update({
+  id: '/vinculos',
+  path: '/vinculos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/certames': typeof CertamesRoute
+  '/metodologia': typeof MetodologiaRoute
+  '/vinculos': typeof VinculosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/certames': typeof CertamesRoute
+  '/metodologia': typeof MetodologiaRoute
+  '/vinculos': typeof VinculosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/certames': typeof CertamesRoute
+  '/metodologia': typeof MetodologiaRoute
+  '/vinculos': typeof VinculosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/certames' | '/metodologia' | '/vinculos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/certames' | '/metodologia' | '/vinculos'
+  id: '__root__' | '/' | '/certames' | '/metodologia' | '/vinculos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CertamesRoute: typeof CertamesRoute
+  MetodologiaRoute: typeof MetodologiaRoute
+  VinculosRoute: typeof VinculosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/certames': {
+      id: '/certames'
+      path: '/certames'
+      fullPath: '/certames'
+      preLoaderRoute: typeof CertamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metodologia': {
+      id: '/metodologia'
+      path: '/metodologia'
+      fullPath: '/metodologia'
+      preLoaderRoute: typeof MetodologiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vinculos': {
+      id: '/vinculos'
+      path: '/vinculos'
+      fullPath: '/vinculos'
+      preLoaderRoute: typeof VinculosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CertamesRoute: CertamesRoute,
+  MetodologiaRoute: MetodologiaRoute,
+  VinculosRoute: VinculosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
