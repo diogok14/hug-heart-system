@@ -362,9 +362,7 @@ function CardContratacoes() {
                   codigoModalidade: Number(modalidade),
                   limite: Math.max(1, Math.min(200, Number(limite) || 25)),
                   ...(ufSelecionada.length === 2 ? { uf: ufSelecionada } : {}),
-                  ...(comprador.trim().length >= 2
-                    ? { comprador: comprador.trim() }
-                    : {}),
+                  comprador: comprador.trim(),
                 },
               }),
             (r) =>
@@ -373,8 +371,9 @@ function CardContratacoes() {
                 : `${r.ingeridos} contratações gravadas no acervo (de ${r.totalFonte} retornadas pela fonte).`,
           )
         }
-        disabled={carregando}
+        disabled={carregando || comprador.trim().length < 2}
       >
+
         {carregando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {carregando ? "Ingerindo…" : "Executar ingestão"}
       </Button>
