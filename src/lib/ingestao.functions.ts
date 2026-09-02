@@ -248,13 +248,19 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     const cnpj = data.cnpj.replace(/\D/g, "");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: emp, error } = await supabaseAdmin
-      .from("empresas")
-      .select("*")
-      .eq("cnpj", cnpj)
-      .maybeSingle();
+    const ler = async () =>
+      await supabaseAdmin.from("empresas").select("*").eq("cnpj", cnpj).maybeSingle();
+
+    let { data: emp, error } = await ler();
     if (error) throw new Error(`Falha ao ler a empresa: ${error.message}`);
-    if (!emp) throw new Error("Empresa não encontrada no acervo.");
+
+    // Empresa ainda não catalogada: sincroniza o cadastro público antes de auditar.
+    if (!emp) {
+      await sincronizarEmpresa(cnpj);
+      ({ data: emp, error } = await ler());
+      if (error) throw new Error(`Falha ao ler a empresa: ${error.message}`);
+      if (!emp) throw new Error("Não foi possível catalogar a empresa para auditoria.");
+    }
 
     const endereco = `${emp.logradouro}, ${emp.numero} - ${emp.bairro}, ${emp.municipio} - ${emp.uf}, ${emp.cep}, Brasil`;
 
