@@ -24,6 +24,7 @@ import {
 import { KpiCard } from "@/components/radar/KpiCard";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import { BadgeProveniencia } from "@/components/radar/BadgeProveniencia";
+import { PageHeader } from "@/components/radar/PageHeader";
 import {
   RISK_META,
   formatBRL,

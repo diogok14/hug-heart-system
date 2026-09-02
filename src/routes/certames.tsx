@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import { DossieLicitacao } from "@/components/radar/DossieLicitacao";
+import { PageHeader } from "@/components/radar/PageHeader";
 import {
   formatBRL,
   formatDate,
@@ -106,15 +107,14 @@ function Explorador() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Explorador de certames</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Base consolidada de licitações e contratos (Transferegov / Portal da Transparência)
-          cruzada com CNPJ/QSA da Receita Federal e sanções da CGU.
-        </p>
-      </div>
+      <PageHeader
+        modulo="Processos licitatórios"
+        titulo="Explorador de certames"
+        descricao="Base consolidada de licitações e contratos (Transferegov / Portal da Transparência) cruzada com CNPJ/QSA da Receita Federal e sanções da CGU."
+        meta={`${licitacoes.length} processos em base · ${linhas.length} atendem aos filtros aplicados`}
+      />
 
-      <div className="panel flex flex-wrap items-center gap-3 p-4">
+      <div className="panel flex flex-wrap items-center gap-3 p-3.5">
         <div className="relative min-w-[240px] flex-1">
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
