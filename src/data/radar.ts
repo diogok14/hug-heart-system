@@ -155,9 +155,18 @@ export const RISK_META: Record<
   },
 };
 
+const PROPOSTA_VAZIA: Proposta = {
+  cnpj_fornecedor: "",
+  valor_proposta: 0,
+  classificacao: 0,
+  vencedora: false,
+  desconto_percentual: 0,
+};
+
 export function vencedora(l: Licitacao): Proposta {
-  return (l.propostas.find((p) => p.vencedora) ?? l.propostas[0]) as Proposta;
+  return l.propostas.find((p) => p.vencedora) ?? l.propostas[0] ?? PROPOSTA_VAZIA;
 }
+
 
 export function diasEntre(a: string, b: string): number {
   return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
@@ -167,18 +176,32 @@ export function formatCNPJ(cnpj: string): string {
   return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
 }
 
+/** Formatação determinística (idêntica no servidor e no navegador, evitando divergência de ICU). */
 export function formatBRL(v: number, compact = false): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    notation: compact ? "compact" : "standard",
-    maximumFractionDigits: compact ? 1 : 2,
-  }).format(v);
+  if (compact) {
+    const escalas: Array<[number, string]> = [
+      [1_000_000_000, " bi"],
+      [1_000_000, " mi"],
+      [1_000, " mil"],
+    ];
+    for (const [divisor, sufixo] of escalas) {
+      if (Math.abs(v) >= divisor) {
+        const n = v / divisor;
+        return `R$ ${n.toFixed(1).replace(".", ",")}${sufixo}`;
+      }
+    }
+    return `R$ ${v.toFixed(0)}`;
+  }
+  const [inteiro, decimal] = Math.abs(v).toFixed(2).split(".");
+  const milhares = (inteiro ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${v < 0 ? "-" : ""}R$ ${milhares},${decimal}`;
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR");
+  const [ano, mes, dia] = iso.slice(0, 10).split("-");
+  return `${dia}/${mes}/${ano}`;
 }
+
 
 /** Pares de licitantes com s\u00f3cio ou endere\u00e7o em comum (base do grafo de conluio). */
 export interface VinculoAresta {
