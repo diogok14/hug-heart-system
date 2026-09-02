@@ -36,8 +36,9 @@ const normalizar = (s: string) =>
     .trim();
 
 /**
- * Sugestões de órgãos compradores para autocomplete: combina o que já está no
- * acervo com os órgãos retornados pela fonte no intervalo consultado.
+ * Sugestões de órgãos compradores para o filtro: lê os órgãos realmente
+ * publicados na fonte (PNCP) para o intervalo/modalidade/UF escolhidos e
+ * complementa com os órgãos já presentes no acervo.
  */
 export const sugerirCompradores = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
@@ -45,32 +46,67 @@ export const sugerirCompradores = createServerFn({ method: "POST" })
       .object({
         termo: z.string().default(""),
         uf: z.string().optional(),
+        dataInicial: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        dataFinal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        codigoModalidade: z.number().int().min(1).max(14).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const termo = normalizar(data.termo);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const vistos = new Set<string>();
+    const sugestoes: string[] = [];
 
+    const adicionar = (nome: string) => {
+      const limpo = nome.trim();
+      if (!limpo || limpo === "Não informado") return;
+      const chave = normalizar(limpo);
+      if (vistos.has(chave)) return;
+      if (termo.length >= 2 && !chave.includes(termo)) return;
+      vistos.add(chave);
+      sugestoes.push(limpo);
+    };
+
+    // 1) Órgãos publicados na fonte no período consultado.
+    if (data.dataInicial && data.dataFinal && data.codigoModalidade) {
+      try {
+        const params = new URLSearchParams({
+          pagina: "1",
+          tamanhoPagina: "500",
+          dataPublicacaoPncpInicial: data.dataInicial,
+          dataPublicacaoPncpFinal: data.dataFinal,
+          codigoModalidade: String(data.codigoModalidade),
+        });
+        const resp = await fetch(`${API_CONTRATACOES}?${params.toString()}`, {
+          headers: { accept: "application/json" },
+        });
+        if (resp.ok) {
+          const payload = (await resp.json()) as {
+            resultado?: Record<string, unknown>[];
+          };
+          for (const r of payload.resultado ?? []) {
+            if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) continue;
+            adicionar(
+              String(r["orgaoEntidadeRazaoSocial"] ?? r["unidadeOrgaoNomeUnidade"] ?? ""),
+            );
+          }
+        }
+      } catch {
+        // fonte indisponível: segue com o acervo local
+      }
+    }
+
+    // 2) Complementa com o acervo já ingerido.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin.from("licitacoes").select("orgao_comprador, uf").limit(400);
     if (data.uf && data.uf.length === 2) q = q.eq("uf", data.uf);
     if (termo.length >= 2) q = q.ilike("orgao_comprador", `%${data.termo.trim()}%`);
+    const { data: linhas } = await q;
+    for (const l of linhas ?? []) adicionar(String(l.orgao_comprador ?? ""));
 
-    const { data: linhas, error } = await q;
-    if (error) throw new Error(`Falha ao consultar órgãos: ${error.message}`);
-
-    const vistos = new Set<string>();
-    const sugestoes: string[] = [];
-    for (const l of linhas ?? []) {
-      const nome = String(l.orgao_comprador ?? "").trim();
-      if (!nome || vistos.has(nome)) continue;
-      if (termo.length >= 2 && !normalizar(nome).includes(termo)) continue;
-      vistos.add(nome);
-      sugestoes.push(nome);
-      if (sugestoes.length >= 20) break;
-    }
-    return { sugestoes };
+    return { sugestoes: sugestoes.sort((a, b) => a.localeCompare(b, "pt-BR")).slice(0, 50) };
   });
+
 
 export const ingerirContratacoes = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => entradaIngestao.parse(input))
