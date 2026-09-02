@@ -94,21 +94,20 @@ function Painel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Painel geral de inteligência</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {registros.length} certames monitorados · {arestasVinculos().length} vínculos
-            societários detectados entre licitantes
-          </p>
-        </div>
-        <Link
-          to="/certames"
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-        >
-          Abrir explorador de certames <ArrowRight className="size-4" aria-hidden />
-        </Link>
-      </div>
+      <PageHeader
+        modulo="Painel de inteligência"
+        titulo="Panorama de risco em contratações públicas"
+        descricao="Indicadores consolidados de risco dos certames homologados sob fiscalização, calculados sobre as cinco dimensões analíticas da nota técnica."
+        meta={`${registros.length} certames monitorados · ${arestasVinculos().length} vínculos societários detectados entre licitantes`}
+        acoes={
+          <Link
+            to="/certames"
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          >
+            Abrir explorador de certames <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
