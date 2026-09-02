@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Database, Building2, Loader2, Satellite } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
   auditarLocalizacao,
   enriquecerEmpresa,
   ingerirContratacoes,
+  sugerirCompradores,
 } from "@/lib/ingestao.functions";
 import { recalcularScores } from "@/lib/radar.functions";
 
