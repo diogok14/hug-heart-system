@@ -110,16 +110,20 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
           </div>
 
           <div className="panel p-4">
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="size-4 text-primary" aria-hidden /> Análise semântica do edital
-              (Gemini)
-            </h3>
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <Sparkles className="size-4 text-primary" aria-hidden /> Análise semântica do
+                edital (Gemini)
+              </h3>
+              <BotaoAnalise licitacaoId={licitacao.id} />
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Score de direcionamento editalício:{" "}
               <span className="tabular font-semibold text-foreground">
                 {licitacao.analise_ia.score_restricao}/15
               </span>
             </p>
+
             <p className="mt-3 text-sm text-muted-foreground">
               {licitacao.analise_ia.sintese_objeto}
             </p>
