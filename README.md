@@ -298,3 +298,9 @@ Diogo Murilo Lopes
 [diogok14@gmail.com](mailto:diogok14@gmail.com)  
 [(34) 98828-3960](tel:+5534988283960)  
 [LinkedIn](https://linkedin.com/in/diogo-murilo-lopes-068b3524)
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - consulte o arquivo [LICENSE](LICENSE) para obter detalhes.
