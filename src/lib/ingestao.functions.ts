@@ -243,8 +243,18 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     z.object({ cnpj: z.string().min(14) }).parse(input),
   )
   .handler(async ({ data }) => {
-    const key = process.env["GOOGLE_MAPS_API_KEY"];
-    if (!key) throw new Error("Chave da Google Maps Platform não configurada no ambiente.");
+    // Conexão gerenciada do Google Maps: as chamadas vão pelo gateway, que
+    // injeta a credencial de servidor (sem restrição por referenciador HTTP).
+    const gateway = "https://connector-gateway.lovable.dev/google_maps";
+    const lovableKey = process.env["LOVABLE_API_KEY"];
+    const connKey = process.env["GOOGLE_MAPS_API_KEY"];
+    if (!lovableKey || !connKey) {
+      throw new Error("Conexão da Google Maps Platform não configurada no ambiente.");
+    }
+    const auth = {
+      Authorization: `Bearer ${lovableKey}`,
+      "X-Connection-Api-Key": connKey,
+    };
     const cnpj = data.cnpj.replace(/\D/g, "");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -265,8 +275,14 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     const endereco = `${emp.logradouro}, ${emp.numero} - ${emp.bairro}, ${emp.municipio} - ${emp.uf}, ${emp.cep}, Brasil`;
 
     const geoResp = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(endereco)}&region=br&key=${key}`,
+      `${gateway}/maps/api/geocode/json?address=${encodeURIComponent(endereco)}&region=br`,
+      { headers: auth },
     );
+    if (!geoResp.ok) {
+      throw new Error(
+        `Geocodificação falhou no gateway [${geoResp.status}]: ${await geoResp.text()}`,
+      );
+    }
     const geo = (await geoResp.json()) as {
       status: string;
       error_message?: string;
@@ -277,47 +293,59 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     };
     const primeiro = geo.results?.[0];
     if (geo.status !== "OK" || !primeiro) {
-      const detalhe = geo.error_message ? ` ${geo.error_message}` : "";
-      if (geo.status === "REQUEST_DENIED") {
-        throw new Error(
-          `Google Maps recusou a requisição (REQUEST_DENIED).${detalhe} A auditoria é executada no servidor: a chave precisa ser de servidor, sem restrição por referenciador HTTP, com billing ativo e com Geocoding API, Places API e Street View Static API habilitadas.`,
-        );
-      }
       throw new Error(
-        `Geocodificação sem resultado para o endereço fiscal (${geo.status}).${detalhe}`,
+        `Geocodificação sem resultado para o endereço fiscal (${geo.status}).${geo.error_message ? " " + geo.error_message : ""}`,
       );
     }
 
     const { lat, lng } = primeiro.geometry.location;
     const precisao = primeiro.geometry.location_type;
 
-    const placesResp = await fetch(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=50&type=establishment&key=${key}`,
-    );
-    const places = (await placesResp.json()) as {
-      status: string;
-      error_message?: string;
-      results?: { name: string; types?: string[] }[];
-    };
-    if (places.status !== "OK" && places.status !== "ZERO_RESULTS") {
+    // Places API (New): estabelecimentos em raio de 50 m.
+    const placesResp = await fetch(`${gateway}/places/v1/places:searchNearby`, {
+      method: "POST",
+      headers: {
+        ...auth,
+        "Content-Type": "application/json",
+        "X-Goog-FieldMask": "places.displayName,places.types",
+      },
+      body: JSON.stringify({
+        locationRestriction: {
+          circle: { center: { latitude: lat, longitude: lng }, radius: 50 },
+        },
+        maxResultCount: 20,
+      }),
+    });
+    if (!placesResp.ok) {
       throw new Error(
-        `Consulta de estabelecimentos (Places) recusada (${places.status}).${places.error_message ? " " + places.error_message : ""}`,
+        `Consulta de estabelecimentos (Places) falhou [${placesResp.status}]: ${await placesResp.text()}`,
       );
     }
-    const estabelecimentos = places.results ?? [];
+    const places = (await placesResp.json()) as {
+      places?: { displayName?: { text?: string }; types?: string[] }[];
+    };
+    const estabelecimentos = (places.places ?? []).map((p) => ({
+      name: p.displayName?.text ?? "Estabelecimento sem nome",
+      types: p.types,
+    }));
 
     const svResp = await fetch(
-      `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${key}`,
+      `${gateway}/maps/api/streetview/metadata?location=${lat},${lng}`,
+      { headers: auth },
     );
-    const sv = (await svResp.json()) as { status: string };
+    // Street View é complementar: se a credencial não cobrir esse serviço, a
+    // auditoria segue apenas com geocodificação + Places.
+    const sv = svResp.ok ? ((await svResp.json()) as { status?: string }) : { status: "ERROR" };
+    const svDisponivel = sv.status === "OK" || sv.status === "ZERO_RESULTS";
     const temImagem = sv.status === "OK";
+
 
     let status_localizacao: string;
     let fachada: string;
     if (estabelecimentos.length >= 1) {
       status_localizacao = "ESTABELECIMENTO_CONFIRMADO";
       fachada = "comercial";
-    } else if (temImagem) {
+    } else if (temImagem || !svDisponivel) {
       status_localizacao = "RESIDENCIA_UNIFAMILIAR";
       fachada = "residencial";
     } else {
