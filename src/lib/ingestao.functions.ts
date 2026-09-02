@@ -257,6 +257,7 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     );
     const geo = (await geoResp.json()) as {
       status: string;
+      error_message?: string;
       results?: {
         geometry: { location: { lat: number; lng: number }; location_type: string };
         formatted_address: string;
@@ -264,7 +265,15 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     };
     const primeiro = geo.results?.[0];
     if (geo.status !== "OK" || !primeiro) {
-      throw new Error(`Geocodificação sem resultado para o endereço fiscal (${geo.status}).`);
+      const detalhe = geo.error_message ? ` ${geo.error_message}` : "";
+      if (geo.status === "REQUEST_DENIED") {
+        throw new Error(
+          `Google Maps recusou a requisição (REQUEST_DENIED).${detalhe} A auditoria é executada no servidor: a chave precisa ser de servidor, sem restrição por referenciador HTTP, com billing ativo e com Geocoding API, Places API e Street View Static API habilitadas.`,
+        );
+      }
+      throw new Error(
+        `Geocodificação sem resultado para o endereço fiscal (${geo.status}).${detalhe}`,
+      );
     }
 
     const { lat, lng } = primeiro.geometry.location;
@@ -275,8 +284,14 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     );
     const places = (await placesResp.json()) as {
       status: string;
+      error_message?: string;
       results?: { name: string; types?: string[] }[];
     };
+    if (places.status !== "OK" && places.status !== "ZERO_RESULTS") {
+      throw new Error(
+        `Consulta de estabelecimentos (Places) recusada (${places.status}).${places.error_message ? " " + places.error_message : ""}`,
+      );
+    }
     const estabelecimentos = places.results ?? [];
 
     const svResp = await fetch(
