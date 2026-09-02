@@ -14,6 +14,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BadgeProveniencia } from "@/components/radar/BadgeProveniencia";
 import { FONTES_DADOS } from "@/data/radar";
+import { RadarProvider } from "@/data/radar-context";
+import { carregarRadar } from "@/lib/radar.functions";
 
 function NotFoundComponent() {
   return (
