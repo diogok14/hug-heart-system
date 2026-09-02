@@ -108,6 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
   }),
+  loader: () => carregarRadar(),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -137,9 +138,11 @@ const NAV = [
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const dataset = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
+      <RadarProvider dataset={dataset}>
       <div className="flex min-h-screen flex-col">
         <header className="bg-institutional text-institutional-foreground">
           <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-4 px-4 py-3 lg:px-8">
@@ -194,6 +197,7 @@ function RootComponent() {
           </div>
         </footer>
       </div>
+      </RadarProvider>
     </QueryClientProvider>
   );
 }
