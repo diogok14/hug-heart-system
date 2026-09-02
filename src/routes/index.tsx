@@ -26,15 +26,13 @@ import { RiskBadge } from "@/components/radar/RiskBadge";
 import { BadgeProveniencia } from "@/components/radar/BadgeProveniencia";
 import {
   RISK_META,
-  arestasVinculos,
-  empresaByCnpj,
   formatBRL,
-  licitacoes,
   riskLevelOf,
   scoreOf,
   vencedora,
   type RiskLevel,
 } from "@/data/radar";
+import { useRadar } from "@/data/radar-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -64,6 +62,7 @@ const COR_RISCO: Record<RiskLevel, string> = {
 };
 
 function Painel() {
+  const { licitacoes, empresaByCnpj, arestasVinculos } = useRadar();
   const registros = licitacoes.map((l) => {
     const score = scoreOf(l);
     return { licitacao: l, score, nivel: riskLevelOf(score) };

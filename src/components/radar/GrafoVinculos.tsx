@@ -1,15 +1,11 @@
 import { useMemo, useState } from "react";
 import {
-  arestasVinculos,
-  empresaByCnpj,
-  empresas,
   formatCNPJ,
-  licitacoes,
   riskLevelOf,
   scoreOf,
-  sociosByCnpj,
   vencedora,
 } from "@/data/radar";
+import { useRadar } from "@/data/radar-context";
 import { cn } from "@/lib/utils";
 
 const W = 900;
@@ -17,6 +13,7 @@ const H = 520;
 
 /** Grafo societário renderizado em SVG: nós = CNPJs, arestas = sócio/endereço em comum. */
 export function GrafoVinculos() {
+  const { empresas, licitacoes, empresaByCnpj, sociosByCnpj, arestasVinculos } = useRadar();
   const arestas = useMemo(() => arestasVinculos(), []);
   const [selecionado, setSelecionado] = useState<string | null>(null);
 
