@@ -5,12 +5,17 @@ import {
   FileText,
   Gavel,
   MapPin,
+  Loader2,
   ScanEye,
   ShieldCheck,
   Sparkles,
   Users,
 } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { analisarEdital } from "@/lib/edital-ia.functions";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -110,16 +115,20 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
           </div>
 
           <div className="panel p-4">
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="size-4 text-primary" aria-hidden /> Análise semântica do edital
-              (Gemini)
-            </h3>
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <Sparkles className="size-4 text-primary" aria-hidden /> Análise semântica do
+                edital (Gemini)
+              </h3>
+              <BotaoAnalise licitacaoId={licitacao.id} />
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Score de direcionamento editalício:{" "}
               <span className="tabular font-semibold text-foreground">
                 {licitacao.analise_ia.score_restricao}/15
               </span>
             </p>
+
             <p className="mt-3 text-sm text-muted-foreground">
               {licitacao.analise_ia.sintese_objeto}
             </p>
@@ -404,6 +413,39 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-baseline justify-between gap-4">
       <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
       <dd className="text-right text-sm font-medium">{value}</dd>
+    </div>
+  );
+}
+
+function BotaoAnalise({ licitacaoId }: { licitacaoId: string }) {
+  const router = useRouter();
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function executar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      await analisarEdital({ data: { licitacaoId } });
+      await router.invalidate();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao analisar o edital.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="text-right">
+      <Button size="sm" variant="outline" onClick={executar} disabled={carregando}>
+        {carregando ? (
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+        ) : (
+          <ScanEye className="size-3.5" aria-hidden />
+        )}
+        {carregando ? "Analisando…" : "Reanalisar edital"}
+      </Button>
+      {erro ? <p className="mt-1 max-w-[220px] text-[11px] text-risk-high">{erro}</p> : null}
     </div>
   );
 }
