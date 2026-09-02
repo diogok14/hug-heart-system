@@ -24,8 +24,53 @@ const entradaIngestao = z.object({
   dataFinal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   codigoModalidade: z.number().int().min(1).max(14).default(6),
   uf: z.string().length(2).optional(),
+  comprador: z.string().optional(),
   limite: z.number().int().min(1).max(200).default(50),
 });
+
+const normalizar = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+/**
+ * Sugestões de órgãos compradores para autocomplete: combina o que já está no
+ * acervo com os órgãos retornados pela fonte no intervalo consultado.
+ */
+export const sugerirCompradores = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        termo: z.string().default(""),
+        uf: z.string().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const termo = normalizar(data.termo);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let q = supabaseAdmin.from("licitacoes").select("orgao_comprador, uf").limit(400);
+    if (data.uf && data.uf.length === 2) q = q.eq("uf", data.uf);
+    if (termo.length >= 2) q = q.ilike("orgao_comprador", `%${data.termo.trim()}%`);
+
+    const { data: linhas, error } = await q;
+    if (error) throw new Error(`Falha ao consultar órgãos: ${error.message}`);
+
+    const vistos = new Set<string>();
+    const sugestoes: string[] = [];
+    for (const l of linhas ?? []) {
+      const nome = String(l.orgao_comprador ?? "").trim();
+      if (!nome || vistos.has(nome)) continue;
+      if (termo.length >= 2 && !normalizar(nome).includes(termo)) continue;
+      vistos.add(nome);
+      sugestoes.push(nome);
+      if (sugestoes.length >= 20) break;
+    }
+    return { sugestoes };
+  });
 
 export const ingerirContratacoes = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => entradaIngestao.parse(input))
