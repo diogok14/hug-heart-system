@@ -253,7 +253,10 @@ function CardContratacoes() {
                   dataFinal,
                   codigoModalidade: Number(modalidade),
                   limite: Math.max(1, Math.min(200, Number(limite) || 25)),
-                  ...(uf.length === 2 ? { uf } : {}),
+                  ...(ufSelecionada.length === 2 ? { uf: ufSelecionada } : {}),
+                  ...(comprador.trim().length >= 2
+                    ? { comprador: comprador.trim() }
+                    : {}),
                 },
               }),
             (r) =>
