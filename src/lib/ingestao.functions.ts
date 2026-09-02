@@ -46,8 +46,14 @@ export const sugerirCompradores = createServerFn({ method: "POST" })
       .object({
         termo: z.string().default(""),
         uf: z.string().optional(),
-        dataInicial: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        dataFinal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        dataInicial: z
+          .string()
+          .optional()
+          .transform((v) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)),
+        dataFinal: z
+          .string()
+          .optional()
+          .transform((v) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)),
         codigoModalidade: z.number().int().min(1).max(14).optional(),
       })
       .parse(input),
