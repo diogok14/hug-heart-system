@@ -333,7 +333,10 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
       `${gateway}/maps/api/streetview/metadata?location=${lat},${lng}`,
       { headers: auth },
     );
+    // Street View é complementar: se a credencial não cobrir esse serviço, a
+    // auditoria segue apenas com geocodificação + Places.
     const sv = svResp.ok ? ((await svResp.json()) as { status?: string }) : { status: "ERROR" };
+    const svDisponivel = sv.status === "OK" || sv.status === "ZERO_RESULTS";
     const temImagem = sv.status === "OK";
 
 
@@ -342,7 +345,7 @@ export const auditarLocalizacao = createServerFn({ method: "POST" })
     if (estabelecimentos.length >= 1) {
       status_localizacao = "ESTABELECIMENTO_CONFIRMADO";
       fachada = "comercial";
-    } else if (temImagem) {
+    } else if (temImagem || !svDisponivel) {
       status_localizacao = "RESIDENCIA_UNIFAMILIAR";
       fachada = "residencial";
     } else {
