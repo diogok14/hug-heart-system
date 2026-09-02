@@ -225,6 +225,15 @@ LOVABLE_API_KEY=<chave-da-plataforma>
 
 > As chaves de servidor (`SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_MAPS_API_KEY`, `LOVABLE_API_KEY`) nunca devem ser expostas no frontend. São lidas apenas dentro de `createServerFn` e rotas API.
 
+#### Segurança das credenciais
+
+- Nenhuma chave privada está versionada. Use `.env.example` como modelo e crie o seu `.env` local (que não deve ser commitado).
+- A `GOOGLE_MAPS_API_KEY` da instalação oficial é armazenada apenas no cofre de segredos do ambiente de execução e lida em tempo de execução via `process.env`, dentro de server functions — ela não trafega para o navegador nem existe no código-fonte.
+- **Quem clonar este repositório precisa usar a própria chave** da Google Maps Platform, com billing ativo e as APIs Geocoding, Places (New) e Street View Static habilitadas.
+- Recomenda-se restringir a chave no Google Cloud a essas três APIs (API restrictions) e, no caso de chaves usadas no navegador, restringir também por HTTP referrer ao domínio do projeto.
+- Sem a variável configurada, a auditoria geográfica falha de forma controlada com a mensagem "Chave da Google Maps Platform não configurada no ambiente." — nenhuma funcionalidade vaza credencial.
+
+
 ### Executar em desenvolvimento
 
 ```bash
