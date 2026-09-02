@@ -149,6 +149,87 @@ function useAcao<T>() {
   return { carregando, erro, texto, executar };
 }
 
+function AutocompleteComprador({
+  valor,
+  aoMudar,
+  uf,
+}: {
+  valor: string;
+  aoMudar: (v: string) => void;
+  uf: string;
+}) {
+  const [sugestoes, setSugestoes] = useState<string[]>([]);
+  const [aberto, setAberto] = useState(false);
+
+  useEffect(() => {
+    const termo = valor.trim();
+    if (termo.length < 2) {
+      setSugestoes([]);
+      return;
+    }
+    let ativo = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await sugerirCompradores({
+          data: { termo, ...(uf.length === 2 ? { uf } : {}) },
+        });
+        if (ativo) setSugestoes(r.sugestoes);
+      } catch {
+        if (ativo) setSugestoes([]);
+      }
+    }, 250);
+    return () => {
+      ativo = false;
+      clearTimeout(t);
+    };
+  }, [valor, uf]);
+
+  const visiveis = aberto && sugestoes.length > 0 && !sugestoes.includes(valor.trim());
+
+  return (
+    <div className="relative space-y-1.5">
+      <Label htmlFor="comprador" className="text-xs">
+        Órgão comprador (opcional)
+      </Label>
+      <Input
+        id="comprador"
+        autoComplete="off"
+        placeholder="Comece a digitar, ex.: Prefeitura Municipal…"
+        value={valor}
+        onFocus={() => setAberto(true)}
+        onBlur={() => setTimeout(() => setAberto(false), 150)}
+        onChange={(e) => {
+          aoMudar(e.target.value);
+          setAberto(true);
+        }}
+      />
+      {visiveis ? (
+        <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-md">
+          {sugestoes.map((s) => (
+            <li key={s}>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  aoMudar(s);
+                  setAberto(false);
+                }}
+              >
+                {s}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="text-[11px] text-muted-foreground">
+        Sugestões vêm dos órgãos já presentes no acervo; o texto digitado também filtra a
+        carga na fonte.
+      </p>
+    </div>
+  );
+}
+
 function CardContratacoes() {
   const [dataInicial, setDataInicial] = useState(iso(ontem));
   const [dataFinal, setDataFinal] = useState(iso(hoje));
