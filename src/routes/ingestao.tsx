@@ -206,32 +206,41 @@ function CardContratacoes() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="uf" className="text-xs">
-              UF (opcional)
-            </Label>
-            <Input
-              id="uf"
-              maxLength={2}
-              placeholder="SP"
-              value={uf}
-              onChange={(e) => setUf(e.target.value.toUpperCase())}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="lim" className="text-xs">
-              Limite
-            </Label>
-            <Input
-              id="lim"
-              type="number"
-              min={1}
-              max={200}
-              value={limite}
-              onChange={(e) => setLimite(e.target.value)}
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Estado (UF)</Label>
+          <Select value={uf} onValueChange={setUf}>
+            <SelectTrigger aria-label="Estado (UF)">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value={TODAS_UFS}>Todos os estados</SelectItem>
+              {UFS.map(([sigla, nome]) => (
+                <SelectItem key={sigla} value={sigla}>
+                  {sigla} — {nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-span-2">
+          <AutocompleteComprador
+            valor={comprador}
+            aoMudar={setComprador}
+            uf={ufSelecionada}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="lim" className="text-xs">
+            Limite de registros
+          </Label>
+          <Input
+            id="lim"
+            type="number"
+            min={1}
+            max={200}
+            value={limite}
+            onChange={(e) => setLimite(e.target.value)}
+          />
         </div>
       </div>
       <Button
