@@ -153,8 +153,10 @@ function CardContratacoes() {
   const [dataInicial, setDataInicial] = useState(iso(ontem));
   const [dataFinal, setDataFinal] = useState(iso(hoje));
   const [modalidade, setModalidade] = useState("6");
-  const [uf, setUf] = useState("");
+  const [uf, setUf] = useState(TODAS_UFS);
+  const [comprador, setComprador] = useState("");
   const [limite, setLimite] = useState("25");
+  const ufSelecionada = uf === TODAS_UFS ? "" : uf;
   const { carregando, erro, texto, executar } = useAcao<{
     ingeridos: number;
     totalFonte: number;
