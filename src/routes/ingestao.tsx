@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Database, Building2, Loader2, Satellite } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
   auditarLocalizacao,
   enriquecerEmpresa,
   ingerirContratacoes,
+  sugerirCompradores,
 } from "@/lib/ingestao.functions";
 import { recalcularScores } from "@/lib/radar.functions";
 
@@ -48,6 +49,18 @@ const MODALIDADES = [
   { codigo: "5", nome: "Inexigibilidade" },
   { codigo: "7", nome: "Concurso" },
 ];
+
+const UFS = [
+  ["AC", "Acre"], ["AL", "Alagoas"], ["AP", "Amapá"], ["AM", "Amazonas"],
+  ["BA", "Bahia"], ["CE", "Ceará"], ["DF", "Distrito Federal"], ["ES", "Espírito Santo"],
+  ["GO", "Goiás"], ["MA", "Maranhão"], ["MT", "Mato Grosso"], ["MS", "Mato Grosso do Sul"],
+  ["MG", "Minas Gerais"], ["PA", "Pará"], ["PB", "Paraíba"], ["PR", "Paraná"],
+  ["PE", "Pernambuco"], ["PI", "Piauí"], ["RJ", "Rio de Janeiro"], ["RN", "Rio Grande do Norte"],
+  ["RS", "Rio Grande do Sul"], ["RO", "Rondônia"], ["RR", "Roraima"], ["SC", "Santa Catarina"],
+  ["SP", "São Paulo"], ["SE", "Sergipe"], ["TO", "Tocantins"],
+] as const;
+
+const TODAS_UFS = "__todas__";
 
 const hoje = new Date();
 const ontem = new Date(hoje.getTime() - 86400000 * 30);
@@ -137,12 +150,95 @@ function useAcao<T>() {
   return { carregando, erro, texto, executar };
 }
 
+function AutocompleteComprador({
+  valor,
+  aoMudar,
+  uf,
+}: {
+  valor: string;
+  aoMudar: (v: string) => void;
+  uf: string;
+}) {
+  const [sugestoes, setSugestoes] = useState<string[]>([]);
+  const [aberto, setAberto] = useState(false);
+
+  useEffect(() => {
+    const termo = valor.trim();
+    if (termo.length < 2) {
+      setSugestoes([]);
+      return;
+    }
+    let ativo = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await sugerirCompradores({
+          data: { termo, ...(uf.length === 2 ? { uf } : {}) },
+        });
+        if (ativo) setSugestoes(r.sugestoes);
+      } catch {
+        if (ativo) setSugestoes([]);
+      }
+    }, 250);
+    return () => {
+      ativo = false;
+      clearTimeout(t);
+    };
+  }, [valor, uf]);
+
+  const visiveis = aberto && sugestoes.length > 0 && !sugestoes.includes(valor.trim());
+
+  return (
+    <div className="relative space-y-1.5">
+      <Label htmlFor="comprador" className="text-xs">
+        Órgão comprador (opcional)
+      </Label>
+      <Input
+        id="comprador"
+        autoComplete="off"
+        placeholder="Comece a digitar, ex.: Prefeitura Municipal…"
+        value={valor}
+        onFocus={() => setAberto(true)}
+        onBlur={() => setTimeout(() => setAberto(false), 150)}
+        onChange={(e) => {
+          aoMudar(e.target.value);
+          setAberto(true);
+        }}
+      />
+      {visiveis ? (
+        <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-md">
+          {sugestoes.map((s) => (
+            <li key={s}>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  aoMudar(s);
+                  setAberto(false);
+                }}
+              >
+                {s}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="text-[11px] text-muted-foreground">
+        Sugestões vêm dos órgãos já presentes no acervo; o texto digitado também filtra a
+        carga na fonte.
+      </p>
+    </div>
+  );
+}
+
 function CardContratacoes() {
   const [dataInicial, setDataInicial] = useState(iso(ontem));
   const [dataFinal, setDataFinal] = useState(iso(hoje));
   const [modalidade, setModalidade] = useState("6");
-  const [uf, setUf] = useState("");
+  const [uf, setUf] = useState(TODAS_UFS);
+  const [comprador, setComprador] = useState("");
   const [limite, setLimite] = useState("25");
+  const ufSelecionada = uf === TODAS_UFS ? "" : uf;
   const { carregando, erro, texto, executar } = useAcao<{
     ingeridos: number;
     totalFonte: number;
@@ -192,32 +288,41 @@ function CardContratacoes() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="uf" className="text-xs">
-              UF (opcional)
-            </Label>
-            <Input
-              id="uf"
-              maxLength={2}
-              placeholder="SP"
-              value={uf}
-              onChange={(e) => setUf(e.target.value.toUpperCase())}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="lim" className="text-xs">
-              Limite
-            </Label>
-            <Input
-              id="lim"
-              type="number"
-              min={1}
-              max={200}
-              value={limite}
-              onChange={(e) => setLimite(e.target.value)}
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Estado (UF)</Label>
+          <Select value={uf} onValueChange={setUf}>
+            <SelectTrigger aria-label="Estado (UF)">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value={TODAS_UFS}>Todos os estados</SelectItem>
+              {UFS.map(([sigla, nome]) => (
+                <SelectItem key={sigla} value={sigla}>
+                  {sigla} — {nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-span-2">
+          <AutocompleteComprador
+            valor={comprador}
+            aoMudar={setComprador}
+            uf={ufSelecionada}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="lim" className="text-xs">
+            Limite de registros
+          </Label>
+          <Input
+            id="lim"
+            type="number"
+            min={1}
+            max={200}
+            value={limite}
+            onChange={(e) => setLimite(e.target.value)}
+          />
         </div>
       </div>
       <Button
@@ -230,7 +335,10 @@ function CardContratacoes() {
                   dataFinal,
                   codigoModalidade: Number(modalidade),
                   limite: Math.max(1, Math.min(200, Number(limite) || 25)),
-                  ...(uf.length === 2 ? { uf } : {}),
+                  ...(ufSelecionada.length === 2 ? { uf: ufSelecionada } : {}),
+                  ...(comprador.trim().length >= 2
+                    ? { comprador: comprador.trim() }
+                    : {}),
                 },
               }),
             (r) =>
