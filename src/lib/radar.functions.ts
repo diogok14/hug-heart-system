@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { calcularScore } from "@/lib/score-engine";
+
 import type {
   AnaliseIA,
   Empresa,
