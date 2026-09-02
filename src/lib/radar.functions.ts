@@ -158,3 +158,31 @@ export const carregarRadar = createServerFn({ method: "GET" }).handler(
     return { empresas, socios, sancoes, licitacoes };
   },
 );
+
+/**
+ * Recalcula os 5 fatores de risco de todos os certames e persiste o resultado
+ * em `auditoria_risco`, mantendo o banco coerente com o motor de score.
+ */
+export const recalcularScores = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const ds = await carregarRadar();
+
+  const linhas = ds.licitacoes.map((l) => ({
+    licitacao_id: l.id,
+    fator_empresa_fantasma: l.auditoria.fator_empresa_fantasma,
+    fator_tempo_constituicao: l.auditoria.fator_tempo_constituicao,
+    fator_capital_desproporcional: l.auditoria.fator_capital_desproporcional,
+    fator_conluio_societario: l.auditoria.fator_conluio_societario,
+    fator_clausula_restritiva: l.auditoria.fator_clausula_restritiva,
+    resumo_analise_ia: l.auditoria.resumo_analise_ia,
+    analise_ia: l.analise_ia as unknown as never,
+    atualizado_em: new Date().toISOString(),
+  }));
+
+  const { error } = await supabaseAdmin
+    .from("auditoria_risco")
+    .upsert(linhas, { onConflict: "licitacao_id" });
+  if (error) throw new Error(`Falha ao persistir os scores: ${error.message}`);
+
+  return { atualizados: linhas.length };
+});
