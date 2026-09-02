@@ -95,9 +95,17 @@ export const ingerirContratacoes = createServerFn({ method: "POST" })
     const payload = (await resp.json()) as { resultado?: Record<string, unknown>[] };
     const bruto = payload.resultado ?? [];
 
-    const filtrado = data.uf
-      ? bruto.filter((r) => String(r["unidadeOrgaoUfSigla"] ?? "") === data.uf)
-      : bruto;
+    const termoComprador = normalizar(data.comprador ?? "");
+    const filtrado = bruto.filter((r) => {
+      if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) return false;
+      if (termoComprador.length >= 2) {
+        const nomes = normalizar(
+          `${String(r["orgaoEntidadeRazaoSocial"] ?? "")} ${String(r["unidadeOrgaoNomeUnidade"] ?? "")}`,
+        );
+        if (!nomes.includes(termoComprador)) return false;
+      }
+      return true;
+    });
 
     const linhas = filtrado.slice(0, data.limite).map((r) => {
       const publicacao = dia(r["dataPublicacaoPncp"] as string, new Date().toISOString());
