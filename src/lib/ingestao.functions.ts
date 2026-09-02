@@ -74,27 +74,49 @@ export const sugerirCompradores = createServerFn({ method: "POST" })
     };
 
     // 1) Órgãos publicados na fonte no período consultado.
+    //    A fonte não filtra por UF/nome, então é preciso varrer todas as
+    //    páginas do período: sem isso, apenas os ~500 primeiros registros
+    //    apareciam e municípios menores ficavam de fora da lista.
     if (data.dataInicial && data.dataFinal && data.codigoModalidade) {
-      try {
+      const buscarPagina = async (pagina: number) => {
         const params = new URLSearchParams({
-          pagina: "1",
+          pagina: String(pagina),
           tamanhoPagina: "500",
-          dataPublicacaoPncpInicial: data.dataInicial,
-          dataPublicacaoPncpFinal: data.dataFinal,
+          dataPublicacaoPncpInicial: data.dataInicial!,
+          dataPublicacaoPncpFinal: data.dataFinal!,
           codigoModalidade: String(data.codigoModalidade),
         });
         const resp = await fetch(`${API_CONTRATACOES}?${params.toString()}`, {
           headers: { accept: "application/json" },
         });
-        if (resp.ok) {
-          const payload = (await resp.json()) as {
-            resultado?: Record<string, unknown>[];
-          };
-          for (const r of payload.resultado ?? []) {
-            if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) continue;
-            adicionar(
-              String(r["orgaoEntidadeRazaoSocial"] ?? r["unidadeOrgaoNomeUnidade"] ?? ""),
-            );
+        if (!resp.ok) return null;
+        return (await resp.json()) as {
+          resultado?: Record<string, unknown>[];
+          totalPaginas?: number;
+        };
+      };
+
+      const absorver = (registros: Record<string, unknown>[]) => {
+        for (const r of registros) {
+          if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) continue;
+          adicionar(String(r["orgaoEntidadeRazaoSocial"] ?? ""));
+          adicionar(String(r["unidadeOrgaoNomeUnidade"] ?? ""));
+        }
+      };
+
+      try {
+        const primeira = await buscarPagina(1);
+        if (primeira) {
+          absorver(primeira.resultado ?? []);
+          const total = Math.min(Number(primeira.totalPaginas ?? 1), 40);
+          const LOTE = 6;
+          for (let inicio = 2; inicio <= total; inicio += LOTE) {
+            const paginas = [];
+            for (let p = inicio; p < inicio + LOTE && p <= total; p += 1) {
+              paginas.push(buscarPagina(p));
+            }
+            const respostas = await Promise.all(paginas);
+            for (const r of respostas) if (r) absorver(r.resultado ?? []);
           }
         }
       } catch {
@@ -110,35 +132,18 @@ export const sugerirCompradores = createServerFn({ method: "POST" })
     const { data: linhas } = await q;
     for (const l of linhas ?? []) adicionar(String(l.orgao_comprador ?? ""));
 
-    return { sugestoes: sugestoes.sort((a, b) => a.localeCompare(b, "pt-BR")).slice(0, 50) };
+    return {
+      sugestoes: sugestoes.sort((a, b) => a.localeCompare(b, "pt-BR")).slice(0, 300),
+    };
+
   });
 
 
 export const ingerirContratacoes = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => entradaIngestao.parse(input))
   .handler(async ({ data }) => {
-    const params = new URLSearchParams({
-      pagina: "1",
-      tamanhoPagina: String(Math.max(10, Math.min(500, data.limite))),
-      dataPublicacaoPncpInicial: data.dataInicial,
-      dataPublicacaoPncpFinal: data.dataFinal,
-      codigoModalidade: String(data.codigoModalidade),
-    });
-
-    const resp = await fetch(`${API_CONTRATACOES}?${params.toString()}`, {
-      headers: { accept: "application/json" },
-    });
-    if (!resp.ok) {
-      throw new Error(
-        `Fonte de dados abertos indisponível (HTTP ${resp.status}). Tente outro intervalo de datas.`,
-      );
-    }
-
-    const payload = (await resp.json()) as { resultado?: Record<string, unknown>[] };
-    const bruto = payload.resultado ?? [];
-
     const termoComprador = normalizar(data.comprador ?? "");
-    const filtrado = bruto.filter((r) => {
+    const combina = (r: Record<string, unknown>) => {
       if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) return false;
       if (termoComprador.length >= 2) {
         const nomes = normalizar(
@@ -147,7 +152,45 @@ export const ingerirContratacoes = createServerFn({ method: "POST" })
         if (!nomes.includes(termoComprador)) return false;
       }
       return true;
-    });
+    };
+
+    const bruto: Record<string, unknown>[] = [];
+    const filtrado: Record<string, unknown>[] = [];
+    let totalPaginas = 1;
+
+    // Varre as páginas do período até completar o limite pedido: o filtro por
+    // UF/comprador é aplicado localmente, então parar na 1ª página deixaria
+    // órgãos menores de fora.
+    for (let pagina = 1; pagina <= Math.min(totalPaginas, 40); pagina += 1) {
+      const params = new URLSearchParams({
+        pagina: String(pagina),
+        tamanhoPagina: "500",
+        dataPublicacaoPncpInicial: data.dataInicial,
+        dataPublicacaoPncpFinal: data.dataFinal,
+        codigoModalidade: String(data.codigoModalidade),
+      });
+      const resp = await fetch(`${API_CONTRATACOES}?${params.toString()}`, {
+        headers: { accept: "application/json" },
+      });
+      if (!resp.ok) {
+        if (pagina === 1) {
+          throw new Error(
+            `Fonte de dados abertos indisponível (HTTP ${resp.status}). Tente outro intervalo de datas.`,
+          );
+        }
+        break;
+      }
+      const payload = (await resp.json()) as {
+        resultado?: Record<string, unknown>[];
+        totalPaginas?: number;
+      };
+      if (pagina === 1) totalPaginas = Number(payload.totalPaginas ?? 1);
+      const registros = payload.resultado ?? [];
+      bruto.push(...registros);
+      filtrado.push(...registros.filter(combina));
+      if (filtrado.length >= data.limite || registros.length === 0) break;
+    }
+
 
     const linhas = filtrado.slice(0, data.limite).map((r) => {
       const publicacao = dia(r["dataPublicacaoPncp"] as string, new Date().toISOString());
