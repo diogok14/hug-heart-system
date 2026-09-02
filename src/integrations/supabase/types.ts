@@ -14,7 +14,276 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      auditoria_risco: {
+        Row: {
+          analise_ia: Json
+          atualizado_em: string
+          fator_capital_desproporcional: number
+          fator_clausula_restritiva: number
+          fator_conluio_societario: number
+          fator_empresa_fantasma: number
+          fator_tempo_constituicao: number
+          licitacao_id: string
+          resumo_analise_ia: string
+        }
+        Insert: {
+          analise_ia?: Json
+          atualizado_em?: string
+          fator_capital_desproporcional?: number
+          fator_clausula_restritiva?: number
+          fator_conluio_societario?: number
+          fator_empresa_fantasma?: number
+          fator_tempo_constituicao?: number
+          licitacao_id: string
+          resumo_analise_ia?: string
+        }
+        Update: {
+          analise_ia?: Json
+          atualizado_em?: string
+          fator_capital_desproporcional?: number
+          fator_clausula_restritiva?: number
+          fator_conluio_societario?: number
+          fator_empresa_fantasma?: number
+          fator_tempo_constituicao?: number
+          licitacao_id?: string
+          resumo_analise_ia?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_risco_licitacao_id_fkey"
+            columns: ["licitacao_id"]
+            isOneToOne: true
+            referencedRelation: "licitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          bairro: string
+          capital_social: number
+          cep: string
+          cnae_descricao: string
+          cnae_principal: string
+          cnpj: string
+          created_at: string
+          data_abertura: string
+          fachada: string
+          latitude: number
+          logradouro: string
+          longitude: number
+          municipio: string
+          nome_fantasia: string | null
+          numero: string
+          places_estabelecimentos_raio_50m: number
+          razao_social: string
+          status_localizacao: string
+          uf: string
+        }
+        Insert: {
+          bairro: string
+          capital_social?: number
+          cep: string
+          cnae_descricao: string
+          cnae_principal: string
+          cnpj: string
+          created_at?: string
+          data_abertura: string
+          fachada?: string
+          latitude: number
+          logradouro: string
+          longitude: number
+          municipio: string
+          nome_fantasia?: string | null
+          numero: string
+          places_estabelecimentos_raio_50m?: number
+          razao_social: string
+          status_localizacao?: string
+          uf: string
+        }
+        Update: {
+          bairro?: string
+          capital_social?: number
+          cep?: string
+          cnae_descricao?: string
+          cnae_principal?: string
+          cnpj?: string
+          created_at?: string
+          data_abertura?: string
+          fachada?: string
+          latitude?: number
+          logradouro?: string
+          longitude?: number
+          municipio?: string
+          nome_fantasia?: string | null
+          numero?: string
+          places_estabelecimentos_raio_50m?: number
+          razao_social?: string
+          status_localizacao?: string
+          uf?: string
+        }
+        Relationships: []
+      }
+      licitacoes: {
+        Row: {
+          created_at: string
+          data_homologacao: string
+          data_publicacao: string
+          id: string
+          link_edital_pdf: string
+          modalidade: string
+          municipio: string
+          municipio_ibge: string
+          numero_edital: string
+          objeto: string
+          orgao_comprador: string
+          uf: string
+          valor_estimado: number
+          valor_homologado: number
+        }
+        Insert: {
+          created_at?: string
+          data_homologacao: string
+          data_publicacao: string
+          id: string
+          link_edital_pdf: string
+          modalidade: string
+          municipio: string
+          municipio_ibge: string
+          numero_edital: string
+          objeto: string
+          orgao_comprador: string
+          uf: string
+          valor_estimado: number
+          valor_homologado: number
+        }
+        Update: {
+          created_at?: string
+          data_homologacao?: string
+          data_publicacao?: string
+          id?: string
+          link_edital_pdf?: string
+          modalidade?: string
+          municipio?: string
+          municipio_ibge?: string
+          numero_edital?: string
+          objeto?: string
+          orgao_comprador?: string
+          uf?: string
+          valor_estimado?: number
+          valor_homologado?: number
+        }
+        Relationships: []
+      }
+      propostas_licitacao: {
+        Row: {
+          classificacao: number
+          cnpj_fornecedor: string
+          desconto_percentual: number
+          id: string
+          licitacao_id: string
+          valor_proposta: number
+          vencedora: boolean
+        }
+        Insert: {
+          classificacao: number
+          cnpj_fornecedor: string
+          desconto_percentual?: number
+          id?: string
+          licitacao_id: string
+          valor_proposta: number
+          vencedora?: boolean
+        }
+        Update: {
+          classificacao?: number
+          cnpj_fornecedor?: string
+          desconto_percentual?: number
+          id?: string
+          licitacao_id?: string
+          valor_proposta?: number
+          vencedora?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_licitacao_licitacao_id_fkey"
+            columns: ["licitacao_id"]
+            isOneToOne: false
+            referencedRelation: "licitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sancoes_cgu: {
+        Row: {
+          ativo: boolean
+          cpf_cnpj_sancionado: string
+          data_fim_sancao: string | null
+          data_inicio_sancao: string
+          id: string
+          motivo: string
+          nome_sancionado: string
+          orgao_sancionador: string
+          tipo_sancao: string
+        }
+        Insert: {
+          ativo?: boolean
+          cpf_cnpj_sancionado: string
+          data_fim_sancao?: string | null
+          data_inicio_sancao: string
+          id?: string
+          motivo: string
+          nome_sancionado: string
+          orgao_sancionador: string
+          tipo_sancao: string
+        }
+        Update: {
+          ativo?: boolean
+          cpf_cnpj_sancionado?: string
+          data_fim_sancao?: string | null
+          data_inicio_sancao?: string
+          id?: string
+          motivo?: string
+          nome_sancionado?: string
+          orgao_sancionador?: string
+          tipo_sancao?: string
+        }
+        Relationships: []
+      }
+      socios: {
+        Row: {
+          cnpj: string
+          cpf_mascarado: string
+          data_entrada: string
+          id: string
+          nome_socio: string
+          qualificacao_socio: string
+        }
+        Insert: {
+          cnpj: string
+          cpf_mascarado: string
+          data_entrada: string
+          id?: string
+          nome_socio: string
+          qualificacao_socio: string
+        }
+        Update: {
+          cnpj?: string
+          cpf_mascarado?: string
+          data_entrada?: string
+          id?: string
+          nome_socio?: string
+          qualificacao_socio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "socios_cnpj_fkey"
+            columns: ["cnpj"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["cnpj"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
