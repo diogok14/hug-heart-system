@@ -140,9 +140,13 @@ function Painel() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-        <section className="panel p-5">
-          <h2 className="text-sm font-semibold">Dispersão: valor do certame × score de risco</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+        <section className="panel">
+          <div className="panel-header">
+            <h2 className="panel-title">Dispersão: valor do certame × score de risco</h2>
+            <span className="label-caps">Quadro I</span>
+          </div>
+          <div className="p-5">
+          <p className="text-xs text-muted-foreground">
             Cada ponto é um certame homologado. O quadrante superior direito concentra contratos de
             alto vulto com maior probabilidade de irregularidade.
           </p>
@@ -193,11 +197,16 @@ function Painel() {
               </ScatterChart>
             </ResponsiveContainer>
           </div>
+          </div>
         </section>
 
-        <section className="panel p-5">
-          <h2 className="text-sm font-semibold">Distribuição por faixa de risco</h2>
-          <div className="mt-4 h-[200px]">
+        <section className="panel">
+          <div className="panel-header">
+            <h2 className="panel-title">Distribuição por faixa de risco</h2>
+            <span className="label-caps">Quadro II</span>
+          </div>
+          <div className="p-5">
+          <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={distribuicao} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -236,12 +245,13 @@ function Painel() {
               </li>
             ))}
           </ul>
+          </div>
         </section>
       </div>
 
-      <section className="panel p-5">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-sm font-semibold">Certames prioritários para fiscalização</h2>
+      <section className="panel">
+        <div className="panel-header">
+          <h2 className="panel-title">Certames prioritários para fiscalização</h2>
           <Link
             to="/vinculos"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
@@ -249,7 +259,7 @@ function Painel() {
             <Network className="size-3.5" aria-hidden /> Ver grafo de conluio
           </Link>
         </div>
-        <ul className="mt-4 divide-y">
+        <ul className="divide-y px-5">
           {prioritarios.map((r) => {
             const emp = empresaByCnpj(vencedora(r.licitacao).cnpj_fornecedor);
             return (
