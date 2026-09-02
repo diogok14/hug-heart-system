@@ -5,12 +5,17 @@ import {
   FileText,
   Gavel,
   MapPin,
+  Loader2,
   ScanEye,
   ShieldCheck,
   Sparkles,
   Users,
 } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { analisarEdital } from "@/lib/edital-ia.functions";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -408,6 +413,39 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-baseline justify-between gap-4">
       <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
       <dd className="text-right text-sm font-medium">{value}</dd>
+    </div>
+  );
+}
+
+function BotaoAnalise({ licitacaoId }: { licitacaoId: string }) {
+  const router = useRouter();
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function executar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      await analisarEdital({ data: { licitacaoId } });
+      await router.invalidate();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao analisar o edital.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="text-right">
+      <Button size="sm" variant="outline" onClick={executar} disabled={carregando}>
+        {carregando ? (
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+        ) : (
+          <ScanEye className="size-3.5" aria-hidden />
+        )}
+        {carregando ? "Analisando…" : "Reanalisar edital"}
+      </Button>
+      {erro ? <p className="mt-1 max-w-[220px] text-[11px] text-risk-high">{erro}</p> : null}
     </div>
   );
 }
