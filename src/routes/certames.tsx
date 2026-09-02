@@ -22,16 +22,15 @@ import { Badge } from "@/components/ui/badge";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import { DossieLicitacao } from "@/components/radar/DossieLicitacao";
 import {
-  empresaByCnpj,
   formatBRL,
   formatDate,
-  licitacoes,
   riskLevelOf,
   scoreOf,
   vencedora,
   type Licitacao,
   type RiskLevel,
 } from "@/data/radar";
+import { useRadar } from "@/data/radar-context";
 
 const searchSchema = z.object({ certame: z.string().optional() });
 
@@ -59,6 +58,7 @@ export const Route = createFileRoute("/certames")({
 type Ordenacao = "score" | "valor" | "data";
 
 function Explorador() {
+  const { licitacoes, empresaByCnpj } = useRadar();
   const { certame } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [busca, setBusca] = useState("");

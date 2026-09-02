@@ -25,17 +25,15 @@ import { FACHADAS, STATUS_LOCALIZACAO_LABEL } from "./fachadas";
 import {
   FATORES,
   diasEntre,
-  empresaByCnpj,
   formatBRL,
   formatCNPJ,
   formatDate,
   riskLevelOf,
-  sancoesByCnpj,
   scoreOf,
-  sociosByCnpj,
   vencedora,
   type Licitacao,
 } from "@/data/radar";
+import { useRadar } from "@/data/radar-context";
 
 export function DossieLicitacao({
   licitacao,
@@ -54,6 +52,7 @@ export function DossieLicitacao({
 }
 
 function DossieBody({ licitacao }: { licitacao: Licitacao }) {
+  const { empresaByCnpj, sociosByCnpj, sancoesByCnpj } = useRadar();
   const score = scoreOf(licitacao);
   const nivel = riskLevelOf(score);
   const prop = vencedora(licitacao);
