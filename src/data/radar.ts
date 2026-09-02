@@ -92,7 +92,10 @@ export interface Licitacao {
     fator_conluio_societario: number;
     fator_clausula_restritiva: number;
     resumo_analise_ia: string;
+    /** Evidência textual por fator, produzida pelo motor de score server-side. */
+    evidencias?: Partial<Record<string, string>>;
   };
+
   analise_ia: AnaliseIA;
 }
 
