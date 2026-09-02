@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CertamesRouteImport } from './routes/certames'
+import { Route as IngestaoRouteImport } from './routes/ingestao'
 import { Route as MetodologiaRouteImport } from './routes/metodologia'
 import { Route as VinculosRouteImport } from './routes/vinculos'
 
@@ -22,6 +23,11 @@ const IndexRoute = IndexRouteImport.update({
 const CertamesRoute = CertamesRouteImport.update({
   id: '/certames',
   path: '/certames',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IngestaoRoute = IngestaoRouteImport.update({
+  id: '/ingestao',
+  path: '/ingestao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MetodologiaRoute = MetodologiaRouteImport.update({
@@ -38,12 +44,14 @@ const VinculosRoute = VinculosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/certames': typeof CertamesRoute
+  '/ingestao': typeof IngestaoRoute
   '/metodologia': typeof MetodologiaRoute
   '/vinculos': typeof VinculosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/certames': typeof CertamesRoute
+  '/ingestao': typeof IngestaoRoute
   '/metodologia': typeof MetodologiaRoute
   '/vinculos': typeof VinculosRoute
 }
@@ -51,20 +59,23 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/certames': typeof CertamesRoute
+  '/ingestao': typeof IngestaoRoute
   '/metodologia': typeof MetodologiaRoute
   '/vinculos': typeof VinculosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/certames' | '/metodologia' | '/vinculos'
+  fullPaths: '/' | '/certames' | '/ingestao' | '/metodologia' | '/vinculos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/certames' | '/metodologia' | '/vinculos'
-  id: '__root__' | '/' | '/certames' | '/metodologia' | '/vinculos'
+  to: '/' | '/certames' | '/ingestao' | '/metodologia' | '/vinculos'
+  id:
+    '__root__' | '/' | '/certames' | '/ingestao' | '/metodologia' | '/vinculos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CertamesRoute: typeof CertamesRoute
+  IngestaoRoute: typeof IngestaoRoute
   MetodologiaRoute: typeof MetodologiaRoute
   VinculosRoute: typeof VinculosRoute
 }
@@ -83,6 +94,13 @@ declare module '@tanstack/react-router' {
       path: '/certames'
       fullPath: '/certames'
       preLoaderRoute: typeof CertamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ingestao': {
+      id: '/ingestao'
+      path: '/ingestao'
+      fullPath: '/ingestao'
+      preLoaderRoute: typeof IngestaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/metodologia': {
@@ -105,6 +123,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CertamesRoute: CertamesRoute,
+  IngestaoRoute: IngestaoRoute,
   MetodologiaRoute: MetodologiaRoute,
   VinculosRoute: VinculosRoute,
 }

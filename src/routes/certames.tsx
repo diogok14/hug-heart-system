@@ -1,7 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowUpDown, Search } from "lucide-react";
+import { ArrowUpDown, Download, Search } from "lucide-react";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { baixarCSV } from "@/lib/export";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -169,10 +172,62 @@ function Explorador() {
       <div className="panel">
         <div className="panel-header">
           <h2 className="panel-title">Relação de processos</h2>
-          <span className="label-caps">
-            {linhas.length} de {licitacoes.length} processos
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="label-caps">
+              {linhas.length} de {licitacoes.length} processos
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                baixarCSV(
+                  `radar-certames-${new Date().toISOString().slice(0, 10)}`,
+                  [
+                    "Score",
+                    "Faixa",
+                    "Edital",
+                    "Objeto",
+                    "Orgao comprador",
+                    "Municipio",
+                    "UF",
+                    "Modalidade",
+                    "Valor estimado",
+                    "Valor homologado",
+                    "Publicacao",
+                    "Homologacao",
+                    "CNPJ vencedora",
+                    "Razao social vencedora",
+                    "Licitantes",
+                  ],
+                  linhas.map((r) => {
+                    const p = vencedora(r.licitacao);
+                    const emp = empresaByCnpj(p.cnpj_fornecedor);
+                    return [
+                      r.score,
+                      r.nivel,
+                      r.licitacao.numero_edital,
+                      r.licitacao.objeto,
+                      r.licitacao.orgao_comprador,
+                      r.licitacao.municipio,
+                      r.licitacao.uf,
+                      r.licitacao.modalidade,
+                      r.licitacao.valor_estimado.toFixed(2).replace(".", ","),
+                      r.licitacao.valor_homologado.toFixed(2).replace(".", ","),
+                      r.licitacao.data_publicacao,
+                      r.licitacao.data_homologacao,
+                      p.cnpj_fornecedor,
+                      emp?.razao_social ?? "",
+                      r.licitacao.propostas.length,
+                    ];
+                  }),
+                )
+              }
+            >
+              <Download className="size-3.5" aria-hidden /> Exportar CSV
+            </Button>
+          </div>
         </div>
+
         <div className="overflow-x-auto">
         <Table>
           <TableHeader>

@@ -155,9 +155,18 @@ export const RISK_META: Record<
   },
 };
 
+const PROPOSTA_VAZIA: Proposta = {
+  cnpj_fornecedor: "",
+  valor_proposta: 0,
+  classificacao: 0,
+  vencedora: false,
+  desconto_percentual: 0,
+};
+
 export function vencedora(l: Licitacao): Proposta {
-  return (l.propostas.find((p) => p.vencedora) ?? l.propostas[0]) as Proposta;
+  return l.propostas.find((p) => p.vencedora) ?? l.propostas[0] ?? PROPOSTA_VAZIA;
 }
+
 
 export function diasEntre(a: string, b: string): number {
   return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);

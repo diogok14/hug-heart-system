@@ -6,6 +6,8 @@ import {
   Gavel,
   MapPin,
   Loader2,
+  Printer,
+  Satellite,
   ScanEye,
   ShieldCheck,
   Sparkles,
@@ -16,6 +18,9 @@ import { useRouter } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { analisarEdital } from "@/lib/edital-ia.functions";
+import { auditarLocalizacao } from "@/lib/ingestao.functions";
+import { imprimirRelatorio } from "@/lib/export";
+
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -77,6 +82,86 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
           </Badge>
           <Badge variant="secondary">{licitacao.modalidade}</Badge>
           <RiskBadge level={nivel} score={score} />
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-auto"
+            onClick={() =>
+              imprimirRelatorio({
+                titulo: `Dossiê analítico — ${licitacao.numero_edital}`,
+                subtitulo: `${licitacao.orgao_comprador} · ${licitacao.municipio}/${licitacao.uf} · IBGE ${licitacao.municipio_ibge}`,
+                selo: `Score de risco: ${score}/100 — faixa ${nivel}`,
+                secoes: [
+                  {
+                    titulo: "Objeto do certame",
+                    texto: licitacao.objeto,
+                    linhas: [
+                      { rotulo: "Modalidade", valor: licitacao.modalidade },
+                      { rotulo: "Valor estimado", valor: formatBRL(licitacao.valor_estimado) },
+                      { rotulo: "Valor homologado", valor: formatBRL(licitacao.valor_homologado) },
+                      { rotulo: "Publicação", valor: formatDate(licitacao.data_publicacao) },
+                      { rotulo: "Homologação", valor: formatDate(licitacao.data_homologacao) },
+                      { rotulo: "Licitantes", valor: String(licitacao.propostas.length) },
+                    ],
+                  },
+                  {
+                    titulo: "Empresa vencedora",
+                    linhas: empresa
+                      ? [
+                          { rotulo: "Razão social", valor: empresa.razao_social },
+                          { rotulo: "CNPJ", valor: formatCNPJ(empresa.cnpj) },
+                          { rotulo: "Abertura", valor: formatDate(empresa.data_abertura) },
+                          {
+                            rotulo: "Capital social",
+                            valor: formatBRL(empresa.capital_social),
+                          },
+                          {
+                            rotulo: "Múltiplo contrato/capital",
+                            valor: `${multiplo.toFixed(1)}x`,
+                          },
+                          {
+                            rotulo: "Idade na publicação",
+                            valor: `${idadeDias} dias`,
+                          },
+                          {
+                            rotulo: "Endereço fiscal",
+                            valor: `${empresa.logradouro}, ${empresa.numero} — ${empresa.bairro}, ${empresa.municipio}/${empresa.uf}`,
+                          },
+                          {
+                            rotulo: "Auditoria geográfica",
+                            valor: `${STATUS_LOCALIZACAO_LABEL[empresa.status_localizacao]} · ${empresa.places_estabelecimentos_raio_50m} estabelecimentos em 50 m`,
+                          },
+                          {
+                            rotulo: "Sanções CGU ativas",
+                            valor: sancoesAtivas.length
+                              ? sancoesAtivas.map((s) => s.tipo_sancao).join(", ")
+                              : "Nenhuma",
+                          },
+                        ]
+                      : [{ rotulo: "Fornecedor", valor: "Não cadastrado" }],
+                  },
+                  {
+                    titulo: "Decomposição do score de risco",
+                    linhas: FATORES.map((f) => ({
+                      rotulo: f.label,
+                      valor: `${licitacao.auditoria[f.key]}/${f.peso}${
+                        licitacao.auditoria.evidencias?.[f.key]
+                          ? ` — ${licitacao.auditoria.evidencias[f.key]}`
+                          : ""
+                      }`,
+                    })),
+                  },
+                  {
+                    titulo: "Parecer consolidado",
+                    texto: licitacao.auditoria.resumo_analise_ia,
+                    linhas: [],
+                  },
+                ],
+              })
+            }
+          >
+            <Printer className="size-3.5" aria-hidden /> Exportar PDF
+          </Button>
         </div>
         <SheetTitle className="text-left text-lg leading-snug">{licitacao.objeto}</SheetTitle>
         <SheetDescription className="text-left">
@@ -84,6 +169,7 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
           {licitacao.municipio_ibge}
         </SheetDescription>
       </SheetHeader>
+
 
       <div className="grid gap-4 p-4 lg:grid-cols-3 lg:p-6">
         {/* Coluna esquerda — certame + IA */}
@@ -318,13 +404,17 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
         <section className="space-y-4">
           <div className="panel overflow-hidden">
             <div className="p-4 pb-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold">
-                <ScanEye className="size-4 text-primary" aria-hidden /> Auditoria física remota
-              </h3>
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  <ScanEye className="size-4 text-primary" aria-hidden /> Auditoria física remota
+                </h3>
+                {empresa ? <BotaoGeo cnpj={empresa.cnpj} /> : null}
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 Google Street View Static API · Places API (raio de 50 m)
               </p>
             </div>
+
             {empresa && (
               <>
                 <img
@@ -449,3 +539,38 @@ function BotaoAnalise({ licitacaoId }: { licitacaoId: string }) {
     </div>
   );
 }
+
+/** Dispara a auditoria geográfica real (Geocoding + Places 50 m + Street View). */
+function BotaoGeo({ cnpj }: { cnpj: string }) {
+  const router = useRouter();
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function executar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      await auditarLocalizacao({ data: { cnpj } });
+      await router.invalidate();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha na auditoria geográfica.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="shrink-0 text-right">
+      <Button size="sm" variant="outline" onClick={executar} disabled={carregando}>
+        {carregando ? (
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+        ) : (
+          <Satellite className="size-3.5" aria-hidden />
+        )}
+        {carregando ? "Auditando…" : "Reauditar endereço"}
+      </Button>
+      {erro ? <p className="mt-1 max-w-[220px] text-[11px] text-risk-high">{erro}</p> : null}
+    </div>
+  );
+}
+

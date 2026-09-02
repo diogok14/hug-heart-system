@@ -7,7 +7,15 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { GitBranch, LayoutDashboard, Radar, ScrollText, Table2 } from "lucide-react";
+import {
+  DatabaseZap,
+  GitBranch,
+  LayoutDashboard,
+  Radar,
+  ScrollText,
+  Table2,
+} from "lucide-react";
+
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
@@ -133,8 +141,10 @@ const NAV = [
   { to: "/", label: "Painel de inteligência", sigla: "Visão geral", icon: LayoutDashboard },
   { to: "/certames", label: "Explorador de certames", sigla: "Processos", icon: Table2 },
   { to: "/vinculos", label: "Grafo de conluio", sigla: "Vínculos societários", icon: GitBranch },
+  { to: "/ingestao", label: "Ingestão de dados", sigla: "Pipeline de fontes", icon: DatabaseZap },
   { to: "/metodologia", label: "Metodologia", sigla: "Nota técnica", icon: ScrollText },
 ] as const;
+
 
 function Sidebar() {
   return (
