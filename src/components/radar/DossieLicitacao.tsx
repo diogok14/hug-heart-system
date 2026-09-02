@@ -155,6 +155,7 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
             <div className="mt-3 space-y-3">
               {FATORES.map((f) => {
                 const valor = licitacao.auditoria[f.key];
+                const evidencia = licitacao.auditoria.evidencias?.[f.key];
                 return (
                   <div key={f.key}>
                     <div className="flex items-baseline justify-between gap-2 text-xs">
@@ -164,9 +165,15 @@ function DossieBody({ licitacao }: { licitacao: Licitacao }) {
                       </span>
                     </div>
                     <Progress value={(valor / f.peso) * 100} className="mt-1 h-1.5" />
+                    {evidencia ? (
+                      <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                        {evidencia}
+                      </p>
+                    ) : null}
                   </div>
                 );
               })}
+
             </div>
             <Separator className="my-4" />
             <div className="flex items-center justify-between">
