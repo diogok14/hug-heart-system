@@ -74,27 +74,49 @@ export const sugerirCompradores = createServerFn({ method: "POST" })
     };
 
     // 1) Órgãos publicados na fonte no período consultado.
+    //    A fonte não filtra por UF/nome, então é preciso varrer todas as
+    //    páginas do período: sem isso, apenas os ~500 primeiros registros
+    //    apareciam e municípios menores ficavam de fora da lista.
     if (data.dataInicial && data.dataFinal && data.codigoModalidade) {
-      try {
+      const buscarPagina = async (pagina: number) => {
         const params = new URLSearchParams({
-          pagina: "1",
+          pagina: String(pagina),
           tamanhoPagina: "500",
-          dataPublicacaoPncpInicial: data.dataInicial,
-          dataPublicacaoPncpFinal: data.dataFinal,
+          dataPublicacaoPncpInicial: data.dataInicial!,
+          dataPublicacaoPncpFinal: data.dataFinal!,
           codigoModalidade: String(data.codigoModalidade),
         });
         const resp = await fetch(`${API_CONTRATACOES}?${params.toString()}`, {
           headers: { accept: "application/json" },
         });
-        if (resp.ok) {
-          const payload = (await resp.json()) as {
-            resultado?: Record<string, unknown>[];
-          };
-          for (const r of payload.resultado ?? []) {
-            if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) continue;
-            adicionar(
-              String(r["orgaoEntidadeRazaoSocial"] ?? r["unidadeOrgaoNomeUnidade"] ?? ""),
-            );
+        if (!resp.ok) return null;
+        return (await resp.json()) as {
+          resultado?: Record<string, unknown>[];
+          totalPaginas?: number;
+        };
+      };
+
+      const absorver = (registros: Record<string, unknown>[]) => {
+        for (const r of registros) {
+          if (data.uf && String(r["unidadeOrgaoUfSigla"] ?? "") !== data.uf) continue;
+          adicionar(String(r["orgaoEntidadeRazaoSocial"] ?? ""));
+          adicionar(String(r["unidadeOrgaoNomeUnidade"] ?? ""));
+        }
+      };
+
+      try {
+        const primeira = await buscarPagina(1);
+        if (primeira) {
+          absorver(primeira.resultado ?? []);
+          const total = Math.min(Number(primeira.totalPaginas ?? 1), 40);
+          const LOTE = 6;
+          for (let inicio = 2; inicio <= total; inicio += LOTE) {
+            const paginas = [];
+            for (let p = inicio; p < inicio + LOTE && p <= total; p += 1) {
+              paginas.push(buscarPagina(p));
+            }
+            const respostas = await Promise.all(paginas);
+            for (const r of respostas) if (r) absorver(r.resultado ?? []);
           }
         }
       } catch {
@@ -110,7 +132,10 @@ export const sugerirCompradores = createServerFn({ method: "POST" })
     const { data: linhas } = await q;
     for (const l of linhas ?? []) adicionar(String(l.orgao_comprador ?? ""));
 
-    return { sugestoes: sugestoes.sort((a, b) => a.localeCompare(b, "pt-BR")).slice(0, 50) };
+    return {
+      sugestoes: sugestoes.sort((a, b) => a.localeCompare(b, "pt-BR")).slice(0, 300),
+    };
+
   });
 
 
